@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#0d1117" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Token Tracker</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- FULL-SCREEN TOKEN GRID -->
+  <div class="token-grid" id="tokenGrid"></div>
+
+  <!-- FIXED BOTTOM BAR -->
+  <div class="bottom-bar">
+    <button class="btn-bar btn-untap" id="untapAll">☀ Untap All</button>
+    <button class="btn-bar btn-add"   id="openSearch">+ Add Token</button>
+  </div>
+
+  <!-- SEARCH MODAL -->
+  <div class="modal-overlay" id="searchModal" hidden>
+    <div class="modal">
+      <div class="modal-head">
+        <span class="modal-title">Add Token</span>
+        <button class="modal-close" id="closeSearch">✕</button>
+      </div>
+      <input class="search-input" id="searchInput" type="text"
+        placeholder="Search tokens… e.g. Soldier, Treasure"
+        autocomplete="off" autocorrect="off" spellcheck="false" />
+      <div class="search-results" id="searchResults">
+        <p class="search-hint">Start typing to search Scryfall.</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+  </script>
+</body>
+</html>

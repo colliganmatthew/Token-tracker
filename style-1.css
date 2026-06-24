@@ -1,0 +1,392 @@
+/* ── RESET ───────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bar-h: 58px;
+  --gold:  #c9a84c;
+  --untap: #22863a;
+  --tap:   #c0392b;
+  --text:  #ffffff;
+}
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+  background: #0d1117;
+  font-family: 'Inter', system-ui, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  touch-action: none;
+}
+
+/* ── TOKEN GRID ──────────────────────────────────────────── */
+/* Each token row = one row in the grid.
+   The grid fills the space above the bottom bar. */
+.token-grid {
+  position: fixed;
+  inset: 0 0 var(--bar-h) 0;
+  display: grid;
+  /* rows are set dynamically via JS */
+  overflow: hidden;
+}
+
+/* ── TOKEN ROW ───────────────────────────────────────────── */
+/* Each token occupies one grid row and is split into
+   UNTAPPED box | TAP BUTTON | TAPPED box  side-by-side */
+.token-row {
+  display: grid;
+  grid-template-columns: 1fr 44px 1fr;
+  min-height: 0;
+  position: relative;
+}
+
+/* Thin separator between token rows */
+.token-row + .token-row {
+  border-top: 1px solid rgba(255,255,255,0.08);
+}
+
+/* ── HALF-BOX (untapped / tapped) ────────────────────────── */
+.half {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  cursor: pointer;
+  min-height: 0;
+}
+
+/* Card art background */
+.half-bg {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center top;
+  filter: brightness(0.38) saturate(0.7);
+  transition: filter 0.12s;
+  pointer-events: none;
+}
+
+/* Colour tint overlay */
+.half.untap-half .half-bg { background-color: rgba(20,80,40,0.35); }
+.half.tap-half   .half-bg { background-color: rgba(80,20,20,0.35); }
+
+/* Touch feedback */
+.half:active .half-bg { filter: brightness(0.55) saturate(0.9); }
+
+/* Top-half zone = increment, bottom-half zone = decrement */
+/* We split using two invisible hit areas stacked via flex */
+.half-inc,
+.half-dec {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 50%;
+}
+.half-inc { top: 0; }
+.half-dec { bottom: 0; }
+
+/* Content layer */
+.half-content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  pointer-events: none;
+}
+
+.half-label {
+  font-family: 'Cinzel', serif;
+  font-weight: 700;
+  color: rgba(255,255,255,0.55);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+.half-count {
+  font-family: 'Cinzel', serif;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1;
+  text-shadow: 0 2px 12px rgba(0,0,0,0.9), 0 0 40px rgba(0,0,0,0.7);
+}
+
+/* Colour accent on the count */
+.half.untap-half .half-count { color: #6effa0; }
+.half.tap-half   .half-count { color: #ff8080; }
+
+/* Token name strip at the very bottom of untap half (left) */
+.half-name {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 3;
+  font-family: 'Cinzel', serif;
+  font-weight: 700;
+  text-align: center;
+  color: var(--gold);
+  background: linear-gradient(transparent, rgba(0,0,0,0.75) 40%);
+  padding: 14px 6px 5px;
+  letter-spacing: 0.05em;
+  pointer-events: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Remove button (top-right corner of untap half) */
+.btn-remove {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 10;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.55);
+  border: 1px solid rgba(255,255,255,0.18);
+  color: rgba(255,255,255,0.6);
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+/* Inc / Dec arrows */
+.arrow {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 4;
+  font-size: 0;        /* invisible — purely a touch target hint */
+  opacity: 0;
+  pointer-events: none;
+}
+.arrow-up   { top: 6px; }
+.arrow-down { bottom: 6px; }
+
+/* ── TAP BUTTON (center column) ──────────────────────────── */
+.tap-col {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.55);
+  border-left:  1px solid rgba(255,255,255,0.08);
+  border-right: 1px solid rgba(255,255,255,0.08);
+  z-index: 5;
+}
+
+.btn-tap {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(180,140,50,0.22);
+  border: 1.5px solid var(--gold);
+  color: var(--gold);
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.1s;
+  line-height: 1;
+}
+.btn-tap:active { background: rgba(180,140,50,0.5); }
+
+/* ── EMPTY STATE ─────────────────────────────────────────── */
+.empty-state {
+  position: fixed;
+  inset: 0 0 var(--bar-h) 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: rgba(255,255,255,0.35);
+  text-align: center;
+  padding: 32px;
+}
+.empty-icon { font-size: 48px; opacity: 0.3; }
+.empty-state h3 {
+  font-family: 'Cinzel', serif;
+  font-size: 16px;
+  color: rgba(255,255,255,0.4);
+}
+.empty-state p { font-size: 13px; line-height: 1.6; }
+
+/* ── BOTTOM BAR ──────────────────────────────────────────── */
+.bottom-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: var(--bar-h);
+  padding: 8px 10px;
+  padding-bottom: max(8px, env(safe-area-inset-bottom));
+  display: flex;
+  gap: 8px;
+  background: #0d1117;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  z-index: 20;
+}
+
+.btn-bar {
+  flex: 1;
+  font-family: 'Cinzel', serif;
+  font-size: 13px;
+  font-weight: 700;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  letter-spacing: 0.04em;
+}
+
+.btn-untap {
+  background: rgba(34,134,58,0.2);
+  color: #6effa0;
+  border: 1px solid #22863a;
+}
+.btn-untap:active { background: rgba(34,134,58,0.45); }
+
+.btn-add {
+  background: rgba(201,168,76,0.18);
+  color: var(--gold);
+  border: 1px solid var(--gold);
+}
+.btn-add:active { background: rgba(201,168,76,0.4); }
+
+/* ── MODAL ───────────────────────────────────────────────── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.75);
+  z-index: 100;
+  display: flex;
+  align-items: flex-end;
+  backdrop-filter: blur(4px);
+  touch-action: auto;
+}
+.modal-overlay[hidden] { display: none !important; }
+
+.modal {
+  background: #161b22;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 12px 12px 0 0;
+  width: 100%;
+  max-height: 88dvh;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: max(12px, env(safe-area-inset-bottom));
+}
+
+.modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.modal-title {
+  font-family: 'Cinzel', serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--gold);
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.4);
+  font-size: 18px;
+  cursor: pointer;
+  padding: 2px 8px;
+}
+
+.search-input {
+  background: #0d1117;
+  border: none;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  color: #fff;
+  font-size: 16px;
+  padding: 13px 16px;
+  outline: none;
+  width: 100%;
+  touch-action: auto;
+}
+.search-input::placeholder { color: rgba(255,255,255,0.3); }
+
+.search-results {
+  overflow-y: auto;
+  flex: 1;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+}
+
+.search-hint, .search-loading {
+  color: rgba(255,255,255,0.3);
+  font-size: 13px;
+  text-align: center;
+  padding: 28px 16px;
+}
+
+.search-result-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  cursor: pointer;
+  touch-action: auto;
+}
+.search-result-item:active { background: rgba(255,255,255,0.05); }
+
+.search-thumb {
+  width: 40px;
+  height: 56px;
+  object-fit: cover;
+  object-position: top;
+  border-radius: 4px;
+  background: #1c2330;
+  flex-shrink: 0;
+}
+.search-thumb-ph {
+  width: 40px;
+  height: 56px;
+  background: #1c2330;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.search-info { flex: 1; min-width: 0; }
+.search-name {
+  font-family: 'Cinzel', serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--gold);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.search-type { font-size: 11px; color: rgba(255,255,255,0.35); margin-top: 2px; }
+.search-pt   { font-size: 11px; color: rgba(255,255,255,0.45); margin-top: 2px; }
+
+/* ── SCROLLBAR ───────────────────────────────────────────── */
+::-webkit-scrollbar { width: 3px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 2px; }
+
+@media (min-width: 500px) {
+  .modal { border-radius: 12px; max-width: 440px; margin: auto; }
+  .modal-overlay { align-items: center; }
+}
