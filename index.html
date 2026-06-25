@@ -10,77 +10,87 @@
   <title>Token Tracker</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Inter:wght@400;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
-<!-- PLAYER SELECT TABS -->
-<header class="app-header">
-  <div class="app-title">⚔ Token Tracker</div>
-  <div class="player-tabs" id="playerTabs">
-    <button class="player-tab active" data-player="0">P1</button>
-    <button class="player-tab" data-player="1">P2</button>
-    <button class="player-tab" data-player="2">P3</button>
-    <button class="player-tab" data-player="3">P4</button>
-  </div>
-</header>
+  <!-- FULL-SCREEN TOKEN GRID -->
+  <div class="token-grid" id="tokenGrid"></div>
 
-<!-- MAIN AREA -->
-<main class="main" id="main">
-
-  <!-- TOKEN LIST FOR ACTIVE PLAYER -->
-  <div class="token-list" id="tokenList"></div>
-
-  <!-- BOTTOM ACTION BAR -->
-  <div class="action-bar">
-    <button class="btn-untap-all" id="untapAll">☀ Untap All</button>
-    <button class="btn-add-token" id="openSearch">+ Add Token</button>
+  <!-- FIXED BOTTOM BAR -->
+  <div class="bottom-bar">
+    <button class="btn-bar btn-reset" id="resetAll">⬛ Reset All</button>
+    <button class="btn-bar btn-untap" id="untapAll">☀ Untap All</button>
+    <div class="manufactor-control">
+      <button class="btn-mfact-adj" id="mfactDec">−</button>
+      <div class="mfact-display">
+        <span class="mfact-count" id="mfactCount">0</span>
+        <span class="mfact-label">⚙ Manufactor</span>
+      </div>
+      <button class="btn-mfact-adj" id="mfactInc">+</button>
+    </div>
+    <button class="btn-bar btn-add"   id="openSearch">+ Add Token</button>
   </div>
 
-</main>
-
-<!-- SEARCH MODAL -->
-<div class="modal-overlay" id="searchModal" hidden>
-  <div class="modal">
-    <div class="modal-header">
-      <span class="modal-title">Add Token</span>
-      <button class="modal-close" id="closeSearch">✕</button>
-    </div>
-    <input
-      class="search-input"
-      id="searchInput"
-      type="text"
-      placeholder="Search tokens… (e.g. Soldier, Zombie)"
-      autocomplete="off"
-      autocorrect="off"
-      spellcheck="false"
-    />
-    <div class="search-results" id="searchResults">
-      <p class="search-hint">Start typing to search Scryfall for token cards.</p>
+  <!-- SEARCH MODAL -->
+  <div class="modal-overlay" id="searchModal" hidden>
+    <div class="modal">
+      <div class="modal-head">
+        <span class="modal-title">Add Token</span>
+        <button class="modal-close" id="closeSearch">✕</button>
+      </div>
+      <input class="search-input" id="searchInput" type="text"
+        placeholder="Search tokens… e.g. Soldier, Treasure"
+        autocomplete="off" autocorrect="off" spellcheck="false" />
+      <div class="search-results" id="searchResults">
+        <p class="search-hint">Start typing to search Scryfall.</p>
+      </div>
     </div>
   </div>
-</div>
 
-<!-- SACRIFICE CONFIRM (tap/untap source picker) -->
-<div class="modal-overlay" id="sacrificeModal" hidden>
-  <div class="modal modal-sm">
-    <div class="modal-header">
-      <span class="modal-title" id="sacrificeTitle">Sacrifice from…</span>
-      <button class="modal-close" id="closeSacrifice">✕</button>
-    </div>
-    <div class="sacrifice-options">
-      <button class="btn-sacrifice-from" id="sacrificeUntapped">💚 Untapped</button>
-      <button class="btn-sacrifice-from" id="sacrificeTapped">🔴 Tapped</button>
+  <!-- SET VALUE MODAL -->
+  <div class="modal-overlay" id="setValueModal" hidden>
+    <div class="modal modal-sm">
+      <div class="modal-head">
+        <span class="modal-title" id="setValueTitle">Set value</span>
+        <button class="modal-close" id="closeSetValue">✕</button>
+      </div>
+      <div class="set-value-body">
+        <p class="set-value-hint" id="setValueHint">Enter the new count</p>
+        <div class="set-value-input-row">
+          <button class="btn-sv-adj" id="svDec">−</button>
+          <input class="set-value-input" id="setValueInput" type="number" min="0" max="9999" inputmode="numeric" />
+          <button class="btn-sv-adj" id="svInc">+</button>
+        </div>
+        <div class="set-value-actions">
+          <button class="btn-sv-cancel" id="cancelSetValue">Cancel</button>
+          <button class="btn-sv-confirm" id="confirmSetValue">Set Value</button>
+        </div>
+      </div>
     </div>
   </div>
-</div>
 
-<script src="app.js"></script>
-<script>
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js').catch(() => {});
-  }
-</script>
+  <!-- RESET ALL CONFIRM MODAL -->
+  <div class="modal-overlay" id="resetModal" hidden>
+    <div class="modal modal-sm">
+      <div class="modal-head">
+        <span class="modal-title">Reset All Tokens?</span>
+        <button class="modal-close" id="closeReset">✕</button>
+      </div>
+      <div class="set-value-body">
+        <p class="set-value-hint">This will set every token's tapped and untapped count to 0.</p>
+        <div class="set-value-actions">
+          <button class="btn-sv-cancel" id="cancelReset">Cancel</button>
+          <button class="btn-sv-confirm btn-sv-danger" id="confirmReset">Reset All</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+  </script>
 </body>
 </html>
